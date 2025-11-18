@@ -14,6 +14,10 @@ jobs:
   test:
     name: Testes Unitários
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
     
     steps:
     - name: Checkout código
@@ -31,15 +35,27 @@ jobs:
       run: dotnet build DrOcupacional.Backend.sln --configuration Release --no-restore
       
     - name: Executar testes
-      run: dotnet test DrOcupacional.Backend.sln --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" || echo "⚠️ Nenhum projeto de teste encontrado ou testes falharam"
+      id: test
+      run: |
+        dotnet test DrOcupacional.Backend.sln --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" || echo "⚠️ Nenhum projeto de teste encontrado ou testes falharam"
+        # Verificar se arquivos .trx foram gerados
+        if find . -name "*.trx" -type f | grep -q .; then
+          echo "has_test_results=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_test_results=false" >> $GITHUB_OUTPUT
+        fi
       continue-on-error: true
       
     - name: Publicar resultados dos testes
-      if: always()
+      if: always() && steps.test.outputs.has_test_results == 'true'
       uses: EnricoMi/publish-unit-test-result-action@v2
       with:
         files: '**/*.trx'
         check_name: 'Resultados dos Testes Unitários'
+        
+    - name: Aviso - Nenhum resultado de teste
+      if: always() && steps.test.outputs.has_test_results == 'false'
+      run: echo "⚠️ Nenhum arquivo de resultado de teste (.trx) foi encontrado. Isso pode indicar que não há projetos de teste na solução."
 
   docker-build-push:
     name: Build e Push Docker

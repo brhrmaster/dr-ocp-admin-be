@@ -1,0 +1,347 @@
+{
+	"info": {
+		"_postman_id": "dr-ocupacional-admin-api",
+		"name": "Dr. Ocupacional Admin API",
+		"description": "Collection completa para testes de integração da API administrativa do Dr. Ocupacional",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Autenticação",
+			"item": [
+				{
+					"name": "Obter Access Token (Login Direto)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set(\"access_token\", response.access_token);",
+									"    pm.environment.set(\"refresh_token\", response.refresh_token);",
+									"    pm.environment.set(\"token_type\", response.token_type);",
+									"    pm.environment.set(\"expires_in\", response.expires_in);",
+									"    console.log('Token obtido com sucesso!');",
+									"    console.log('Access Token:', response.access_token);",
+									"} else {",
+									"    console.log('Erro ao obter token:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@dr-ocupacional.com\",\n    \"password\": \"Admin@123\",\n    \"client_id\": \"ui-app\",\n    \"scope\": \"ui-app openid profile email\"\n}"
+						},
+						"url": {
+							"raw": "{{identity_url}}/api/auth/login",
+							"host": ["{{identity_url}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Obtém um access_token do Identity Manager. Este token será usado para autenticar todas as requisições à Admin API. O token é salvo automaticamente na variável de ambiente 'access_token'."
+					},
+					"response": []
+				},
+				{
+					"name": "Validar Token (Introspect)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{identity_url}}/oauth/introspect",
+							"host": ["{{identity_url}}"],
+							"path": ["oauth", "introspect"]
+						},
+						"description": "Valida o access_token atual através do endpoint de introspect do Identity Manager. Retorna informações sobre o token incluindo se está ativo, expiração, etc."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Menus",
+			"item": [
+				{
+					"name": "Buscar Todos os Menus (Sem Paginação)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/menus/all?nome=",
+							"host": ["{{base_url}}"],
+							"path": ["api", "menus", "all"],
+							"query": [
+								{
+									"key": "nome",
+									"value": "",
+									"description": "Nome do menu para busca (opcional). Deixe vazio para retornar todos os menus.",
+									"disabled": false
+								}
+							]
+						},
+						"description": "Busca todos os menus. Se o parâmetro 'nome' for fornecido, filtra os menus pelo nome. Este endpoint não utiliza paginação."
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Menus com Paginação",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/menus?nome=&page=1&pageSize=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "menus"],
+							"query": [
+								{
+									"key": "nome",
+									"value": "",
+									"description": "Nome do menu para busca (opcional)",
+									"disabled": false
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Número da página (padrão: 1)",
+									"disabled": false
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Itens por página (padrão: 10, máximo: 100)",
+									"disabled": false
+								}
+							]
+						},
+						"description": "Busca menus com paginação. Retorna um objeto PagedResultDto contendo os menus, total de itens, página atual e tamanho da página."
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Menu por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set(\"menu_id\", response.codMenu);",
+									"    console.log('Menu encontrado:', response);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/menus/{{menu_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "menus", "{{menu_id}}"]
+						},
+						"description": "Obtém um menu específico pelo seu ID (CodMenu). O ID do menu é salvo automaticamente na variável 'menu_id' após uma busca bem-sucedida."
+					},
+					"response": []
+				},
+				{
+					"name": "Criar Novo Menu",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set(\"menu_id\", response.codMenu);",
+									"    console.log('Menu criado com sucesso! ID:', response.codMenu);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Novo Menu\",\n    \"ordem\": 1,\n    \"icone\": \"menu-icon\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/menus",
+							"host": ["{{base_url}}"],
+							"path": ["api", "menus"]
+						},
+						"description": "Cria um novo menu. O nome do menu deve ser único. Retorna o menu criado com o ID gerado. O ID é salvo automaticamente na variável 'menu_id'."
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Menu",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Menu Atualizado\",\n    \"ordem\": 2,\n    \"icone\": \"updated-icon\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/menus/{{menu_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "menus", "{{menu_id}}"]
+						},
+						"description": "Atualiza um menu existente. O nome do menu deve ser único (não pode conflitar com outros menus). Requer o ID do menu na URL."
+					},
+					"response": []
+				},
+				{
+					"name": "Excluir Menu",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/menus/{{menu_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "menus", "{{menu_id}}"]
+						},
+						"description": "Exclui um menu pelo seu ID. Retorna 204 No Content em caso de sucesso. Requer o ID do menu na URL."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Swagger",
+			"item": [
+				{
+					"name": "Swagger UI",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/swagger",
+							"host": ["{{base_url}}"],
+							"path": ["swagger"]
+						},
+						"description": "Acessa a interface Swagger UI para documentação interativa da API."
+					},
+					"response": []
+				},
+				{
+					"name": "Swagger JSON",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/swagger/v1/swagger.json",
+							"host": ["{{base_url}}"],
+							"path": ["swagger", "v1", "swagger.json"]
+						},
+						"description": "Obtém a especificação OpenAPI/Swagger em formato JSON."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string",
+			"description": "URL base da Admin API"
+		},
+		{
+			"key": "identity_url",
+			"value": "http://localhost:8081",
+			"type": "string",
+			"description": "URL base do Identity Manager"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string",
+			"description": "Access token JWT obtido do Identity Manager (preenchido automaticamente após login)"
+		},
+		{
+			"key": "menu_id",
+			"value": "",
+			"type": "string",
+			"description": "ID do menu atual (preenchido automaticamente após criar ou buscar um menu)"
+		}
+	]
+}
+

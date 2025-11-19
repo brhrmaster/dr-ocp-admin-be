@@ -1,10 +1,10 @@
-using DrOcupacional.Backend.Api.DTOs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using DrOcupacional.Backend.Application.DTOs;
 
 namespace DrOcupacional.Backend.Api.Configuration;
 
@@ -93,7 +93,7 @@ public class IntrospectAuthenticationHandler : AuthenticationHandler<Authenticat
         }
     }
 
-    private async Task<IntrospectResponse?> ValidateTokenViaIntrospectAsync(string token)
+    private async Task<IntrospectResponseDto?> ValidateTokenViaIntrospectAsync(string token)
     {
         var identityAuthority = _configuration["Identity:Authority"] ?? "http://localhost:8081";
         var introspectUrl = $"{identityAuthority}/oauth/introspect";
@@ -116,11 +116,11 @@ public class IntrospectAuthenticationHandler : AuthenticationHandler<Authenticat
         }
 
         var content = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<IntrospectResponse>(content);
+        return JsonSerializer.Deserialize<IntrospectResponseDto>(content);
     }
 
     private static bool ValidateIssuerAndAudience(
-        IntrospectResponse introspectResult,
+        IntrospectResponseDto introspectResult,
         string expectedIssuer,
         string expectedAudience)
     {
@@ -143,7 +143,7 @@ public class IntrospectAuthenticationHandler : AuthenticationHandler<Authenticat
 
     private static ClaimsPrincipal? CreatePrincipalFromToken(
         string token,
-        IntrospectResponse introspectResult)
+        IntrospectResponseDto introspectResult)
     {
         try
         {

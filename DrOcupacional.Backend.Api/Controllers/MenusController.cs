@@ -7,7 +7,7 @@ namespace DrOcupacional.Backend.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize]
+[Authorize]
 public class MenusController : ControllerBase
 {
     private readonly IMenuService _menuService;

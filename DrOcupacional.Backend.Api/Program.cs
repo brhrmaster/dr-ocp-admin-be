@@ -10,8 +10,8 @@ builder.Services.AddControllers();
 // Configurar Swagger
 builder.Services.AddSwaggerConfiguration();
 
-// Configurar autenticação JWT
-builder.Services.AddJwtAuthentication(builder.Configuration);
+// Configurar autenticação via Token Introspection (OAuth2 RFC 7662)
+builder.Services.AddIntrospectAuthentication(builder.Configuration);
 
 // Configurar CORS
 builder.Services.AddCorsConfiguration(builder.Environment);
@@ -26,9 +26,6 @@ var app = builder.Build();
 app.UseSwaggerConfiguration();
 app.UseHttpsRedirection();
 app.UseCorsConfiguration();
-
-// Middleware customizado para validar token via introspect antes do JWT Bearer
-app.UseIntrospectTokenValidation();
 
 app.UseAuthentication();
 app.UseAuthorization();

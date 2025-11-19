@@ -1,4 +1,5 @@
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace DrOcupacional.Backend.Api.Configuration;
 
@@ -19,11 +20,12 @@ public static class SwaggerConfiguration
             // Configurar autenticação JWT no Swagger
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                Description = "JWT Authorization header usando o esquema Bearer. Exemplo: \"Authorization: Bearer {token}\"",
+                Description = "JWT Authorization header usando o esquema Bearer.",
                 Name = "Authorization",
                 In = ParameterLocation.Header,
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "Bearer"
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT"
             });
 
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -47,18 +49,29 @@ public static class SwaggerConfiguration
 
     public static WebApplication UseSwaggerConfiguration(this WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
+        // Habilitar Swagger em Development e quando explicitamente configurado
+        var enableSwagger = app.Environment.IsDevelopment() || 
+                           app.Configuration.GetValue<bool>("EnableSwagger", false);
+        
+        if (enableSwagger)
         {
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Dr. Ocupacional API v1");
-                c.RoutePrefix = string.Empty; // Swagger UI na raiz
+                c.RoutePrefix = "swagger"; // Swagger UI em /swagger
+                c.DisplayRequestDuration();
+                c.EnableDeepLinking();
+                c.EnableFilter();
             });
         }
 
         return app;
     }
 }
+
+
+
+
 
 
